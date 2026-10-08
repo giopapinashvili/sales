@@ -1,21 +1,29 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dedas-orders",
+  "name": "sales",
   "main": "server/worker.mjs",
   "compatibility_date": "2026-10-08",
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*"
+    ]
   },
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "dedas-orders-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_name": "sales-db",
+      "database_id": "b16adaac-a335-476e-b452-417971bc44f0",
       "migrations_dir": "migrations"
     }
   ],
-  "triggers": { "crons": ["0 8 * * *"] },
-  "observability": { "enabled": true }
+  "triggers": {
+    "crons": [
+      "0 8 * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  }
 }

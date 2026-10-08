@@ -40,16 +40,3 @@ export function validateOrder(input){
   for(const [field,max] of [['deliveryTime',120],['notes',3000]]){if(typeof input[field]!=='string'||input[field].length>max)throw new Error('დამატებითი ინფორმაცია ძალიან გრძელია.');result[field]=input[field].trim();}
   return result;
 }
-export function demoOrders(today=todayKey()){
-  const date=days=>new Date(Date.parse(today+'T12:00:00Z')+days*86400000).toISOString().slice(0,10);
-  return [
-    ['ნინო ბერიძე','თეთრეულის ნაკრები',8500,'თბილისი',0],
-    ['მარიამ ჯაფარიძე','პირსახოცების ნაკრები',4500,'იმერეთი',0],
-    ['თამარ აბაშიძე','სუფრა',6000,'აჭარა',0],
-    ['ანა მაისურაძე','თეთრეულის ნაკრები',8500,'თბილისი',3],
-    ['სალომე ლომიძე','პირსახოცების ნაკრები',4500,'კახეთი',1],
-    ['ეკა კაპანაძე','საწოლის გადასაფარებელი',12000,'ქუთაისი',5],
-    ['ნატო გელაშვილი','ბალიშის პირები',3500,'რუსთავი',2],
-    ['მაკა ცინცაძე','სუფრა',6000,'თბილისი',-2]
-  ].map((a,i)=>({id:'demo-'+i,customer:a[0],product:a[1],priceCents:a[2],region:a[3],shipDate:date(a[4]),address:i===0?'წერეთლის გამზირი 24, ბინა 8':'მაგალითის ქუჩა 12, ბინა 4',phone:'555 12 34 56',deliveryTime:'14:00–18:00',notes:'მისვლამდე დაურეკეთ.',status:i===7?'sent':'pending',createdAt:Date.now()-i*60000,updatedAt:Date.now(),sentAt:i===7?Date.now()-86400000:null,version:1}));
-}

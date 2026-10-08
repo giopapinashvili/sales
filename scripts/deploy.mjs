@@ -26,9 +26,7 @@ async function main(){
     config=JSON.parse(await readFile('wrangler.json','utf8'));db=config.d1_databases.find(v=>v.binding==='DB');if(!db?.database_id)throw new Error('საცავი ვერ მიება. გადახედე Cloudflare-ის პასუხს.');db.migrations_dir='migrations';await writeFile('wrangler.json',JSON.stringify(config,null,2)+'\n');
   }
   await run(['d1','migrations','apply','DB','--remote']);
-  // Creating the Worker first allows a single bulk upload of encrypted secrets.
-  // Until secrets are installed, all order APIs fail closed.
-  await run(['deploy']);await run(['secret','bulk'],JSON.stringify(secrets));await run(['deploy']);
+  await run(['deploy','--secrets-file','deployment-secrets.json']);
   await unlink('.initial-password').catch(error=>{if(error.code!=='ENOENT')throw error;});
   process.stdout.write('\nმზადაა! გახსენი ზემოთ ნაჩვენები მისამართი.\nშედი შენს პაროლით, დაამატე აპი ტელეფონში და ზარის ღილაკით ჩართე შეხსენება.\nპაროლი და გასაღებები deployment-secrets.json-შია — შეინახე პირადად.\n');
 }
