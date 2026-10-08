@@ -60,6 +60,16 @@
   <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-header"><h2 id="settings-title">პარამეტრები</h2><button class="icon-button" data-close aria-label="დახურვა"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="settings-content"></div></dialog>
   <dialog id="login-dialog" aria-labelledby="login-title"><div class="login-mark"><svg class="icon"><use href="#i-book"/></svg></div><h2 id="login-title">შენი შეკვეთების რვეული</h2><p class="muted">პაროლი მხოლოდ პირველად შეიყვანე. ეს მოწყობილობა შესვლას დაიმახსოვრებს.</p><form id="login-form"><label for="password">პაროლი</label><input id="password" name="password" type="password" inputmode="numeric" autocomplete="current-password" required minlength="8"><p id="login-error" class="form-error" role="alert" hidden></p><button class="primary-button" type="submit">შესვლა</button></form></dialog>
   <dialog id="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-header"><h2 id="confirm-title">წავშალოთ შეკვეთა?</h2><button class="icon-button" data-close aria-label="დახურვა"><svg class="icon"><use href="#i-close"/></svg></button></div><p id="confirm-copy"></p><div class="dialog-actions"><button class="secondary-button" data-close>გაუქმება</button><button id="confirm-delete" class="danger-button">წაშლა</button></div></dialog>
+  <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-title" aria-describedby="install-description" closedby="any">
+    <button class="icon-button install-close" data-close aria-label="დახურვა"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+    <img class="install-app-icon" src="/icons/icon-192.png" width="76" height="76" alt="">
+    <span class="install-eyebrow">შეკვეთების რვეული</span>
+    <h2 id="install-title">დააყენე ტელეფონში</h2>
+    <p id="install-description" class="install-description">შეკვეთები ყოველთვის ხელთ გქონდეს — გახსენი პირდაპირ მთავარი ეკრანიდან.</p>
+    <div class="install-guidance" aria-live="polite"><p id="install-note"></p><ol id="install-steps"></ol></div>
+    <button id="install-now" class="primary-button" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>აპის დაყენება</button>
+    <button class="text-button install-later" data-close type="button">მოგვიანებით</button>
+  </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <noscript><div class="noscript">საიტის გამოსაყენებლად ჩართე JavaScript ბრაუზერის პარამეტრებში.</div></noscript>
 </body>

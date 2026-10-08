@@ -1,5 +1,5 @@
-const CACHE='orders-shell-v2';
-const SHELL=['/','/styles.css','/app.mjs','/ui.mjs','/core.mjs','/manifest.webmanifest','/favicon.svg','/icons/icon-192.png','/icons/icon-512.png','/icons/maskable-512.png','/fonts/georgian.woff2','/fonts/latin.woff2'];
+const CACHE='orders-shell-v3';
+const SHELL=['/','/styles.css','/app.mjs','/ui.mjs','/core.mjs','/install.mjs','/manifest.webmanifest','/favicon.svg','/icons/icon-192.png','/icons/icon-512.png','/icons/maskable-512.png','/fonts/georgian.woff2','/fonts/latin.woff2'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('orders-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/api/'))return;if(event.request.mode==='navigate'){event.respondWith(fetch(event.request).catch(()=>caches.match('/')));return}if(!SHELL.includes(url.pathname))return;event.respondWith(caches.open(CACHE).then(async cache=>{try{const res=await fetch(event.request);if(res.ok)await cache.put(event.request,res.clone());return res}catch(error){const cached=await cache.match(event.request);if(cached)return cached;throw error}}))});
