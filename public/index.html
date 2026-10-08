@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#305c42">
+  <meta name="description" content="შეკვეთების რვეული — ჩაიწერეთ გაყიდვები და გახსოვდეთ, როდის არის გასაგზავნი.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="შეკვეთები">
+  <title>შეკვეთების რვეული</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.mjs"></script>
+</head>
+<body>
+  <svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M6 3h14v18H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 0v18M10 8h6M10 12h6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m16 3 5 5L8 21H3v-5L16 3Zm-2 2 5 5"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="m5 3 4 4-2 3c1 3 4 6 7 7l3-2 4 4-2 3C10 22 2 14 2 5l3-2Z"/></symbol>
+    <symbol id="i-location" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 2v6M17 2v6M3 11h18M8 15h2M14 15h2"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 10v10M3 7l9 5 9-5M7.5 4.5l9 5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M20 12a8 8 0 0 0-14-5M4 12a8 8 0 0 0 14 5"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 3H3v18h6M9 12h12m-5-5 5 5-5 5"/></symbol>
+  </defs></svg>
+  <div id="offline-banner" class="offline-banner" hidden>ინტერნეტი გათიშულია. დაკავშირებისას შეკვეთები განახლდება.</div>
+  <div class="app-shell">
+    <aside class="desktop-rail">
+      <a href="/" class="brand" aria-label="შეკვეთების რვეული"><span class="brand-icon"><svg class="icon"><use href="#i-book"/></svg></span><span>შეკვეთების<br>რვეული</span></a>
+      <p class="rail-label">ჩემი მაღაზია</p>
+      <button class="rail-item active" data-action="all"><svg class="icon"><use href="#i-book"/></svg>შეკვეთები</button>
+      <button class="rail-item" data-action="today"><svg class="icon"><use href="#i-calendar"/></svg>დღეს გასაგზავნი<span id="rail-today" class="rail-count">0</span></button>
+      <button class="rail-item" data-action="sent"><svg class="icon"><use href="#i-check"/></svg>გაგზავნილი</button>
+      <div class="rail-bottom"><button class="rail-item" data-action="settings"><svg class="icon"><use href="#i-settings"/></svg>პარამეტრები</button><span class="rail-foot">ყველა შეკვეთა თავის ადგილას.</span></div>
+    </aside>
+    <main id="main" class="main">
+      <div class="topline"><span class="eyebrow">ჩემი შეკვეთების რვეული</span><span id="demo-badge" class="demo-badge" hidden>საჩვენებელი ვერსია</span><button class="text-button desktop-settings" data-action="settings"><svg class="icon"><use href="#i-settings"/></svg>პარამეტრები</button></div>
+      <header class="page-header"><div><h1>შეკვეთები<span class="title-dot">.</span></h1><p id="current-date" class="current-date"></p></div><div class="header-actions"><button class="icon-button mobile-search" data-action="search" aria-label="შეკვეთის ძებნა"><svg class="icon"><use href="#i-search"/></svg></button><button class="icon-button bell-button" data-action="notifications" aria-label="შეხსენების პარამეტრები"><svg class="icon"><use href="#i-bell"/></svg><span id="notification-dot" hidden></span></button><button class="icon-button mobile-settings" data-action="settings" aria-label="პარამეტრები"><svg class="icon"><use href="#i-settings"/></svg></button><button class="primary-button desktop-add" data-action="new"><svg class="icon"><use href="#i-plus"/></svg>ახალი შეკვეთა</button></div></header>
+      <button class="reminder-banner" data-action="today"><span class="reminder-icon"><svg class="icon"><use href="#i-bell"/></svg></span><span class="reminder-copy"><strong id="today-message">დღეს ყველაფერი მოწესრიგებულია</strong><span id="reminder-caption">შეხსენება ყოველდღე · 12:00</span></span><span class="banner-time"><span>თბილისის დროით</span><strong>12:00</strong></span></button>
+      <div class="toolbar"><div class="filter-tabs" role="group" aria-label="შეკვეთების ფილტრი"><button data-filter="all" class="selected" aria-pressed="true">ყველა<span id="count-all">0</span></button><button data-filter="today" aria-pressed="false">დღეს<span id="count-today">0</span></button><button data-filter="sent" aria-pressed="false">გაგზავნილი<span id="count-sent">0</span></button></div><div id="search-wrap" class="search-wrap"><svg class="icon"><use href="#i-search"/></svg><input id="search" type="search" placeholder="სახელი, პროდუქტი, ტელეფონი…" aria-label="შეკვეთების ძებნა" autocomplete="off"></div></div>
+      <div id="load-error" class="load-error" role="alert" hidden><span id="load-error-text"></span><button data-action="reload" class="secondary-button">ხელახლა ცდა</button></div>
+      <div id="orders" class="orders" aria-live="polite" aria-busy="true"><div class="loading-state">შეკვეთები იტვირთება…</div></div>
+      <footer class="list-footer"><span id="list-summary"></span><span>ერთი ნაკლები საზრუნავი.</span></footer>
+    </main>
+    <aside class="day-panel"><div class="day-card"><span class="small-label">დღის გეგმაში</span><div class="day-number" id="day-number">0</div><p>შეკვეთა გასაგზავნად</p><div class="day-divider"></div><span class="small-label">შეკვეთების ჯამი</span><strong class="day-total" id="day-total">0 ₾</strong><div id="day-regions" class="day-regions"></div><button class="secondary-button" data-action="today">დღევანდელი შეკვეთები</button></div><div class="install-card"><span class="install-icon"><svg class="icon"><use href="#i-download"/></svg></span><h2>ყოველთვის ხელთ</h2><p>დაამატე ტელეფონის მთავარ ეკრანზე და გახსენი როგორც აპი.</p><button class="text-button" data-action="install">აპის დაყენება</button></div></aside>
+  </div>
+  <div class="mobile-add-wrap"><button class="primary-button mobile-add" data-action="new"><svg class="icon"><use href="#i-plus"/></svg>ახალი შეკვეთა</button></div>
+  <dialog id="order-dialog" aria-labelledby="form-title"><div class="dialog-header"><div><span class="small-label">შეკვეთების რვეული</span><h2 id="form-title">ახალი შეკვეთა</h2></div><button class="icon-button" data-close aria-label="დახურვა"><svg class="icon"><use href="#i-close"/></svg></button></div><form id="order-form"><div id="form-fields"></div><p id="form-error" class="form-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="secondary-button" data-close>გაუქმება</button><button id="save-button" class="primary-button" type="submit"><svg class="icon"><use href="#i-check"/></svg>შენახვა</button></div></form></dialog>
+  <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-header"><h2 id="settings-title">პარამეტრები</h2><button class="icon-button" data-close aria-label="დახურვა"><svg class="icon"><use href="#i-close"/></svg></button></div><div id="settings-content"></div></dialog>
+  <dialog id="login-dialog" aria-labelledby="login-title"><div class="login-mark"><svg class="icon"><use href="#i-book"/></svg></div><h2 id="login-title">შენი შეკვეთების რვეული</h2><p class="muted">პაროლი მხოლოდ პირველად შეიყვანე. ეს მოწყობილობა შესვლას დაიმახსოვრებს.</p><form id="login-form"><label for="password">პაროლი</label><input id="password" name="password" type="password" inputmode="numeric" autocomplete="current-password" required minlength="8"><p id="login-error" class="form-error" role="alert" hidden></p><button class="primary-button" type="submit">შესვლა</button></form></dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-header"><h2 id="confirm-title">წავშალოთ შეკვეთა?</h2><button class="icon-button" data-close aria-label="დახურვა"><svg class="icon"><use href="#i-close"/></svg></button></div><p id="confirm-copy"></p><div class="dialog-actions"><button class="secondary-button" data-close>გაუქმება</button><button id="confirm-delete" class="danger-button">წაშლა</button></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <noscript><div class="noscript">საიტის გამოსაყენებლად ჩართე JavaScript ბრაუზერის პარამეტრებში.</div></noscript>
+</body>
+</html>

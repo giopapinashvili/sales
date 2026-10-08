@@ -1,0 +1,12 @@
+node_modules/
+.wrangler/
+.dev.vars*
+.env*
+build/
+test-results/
+playwright-report/
+cloudflare-upload.zip
+preview*.png
+deployment-secrets.json
+.initial-password
+.publish-sales/
