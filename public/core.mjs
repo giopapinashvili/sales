@@ -11,7 +11,7 @@ export function dueLabel(order,today=todayKey()){
 }
 export function orderGroups(orders,filter='all',query='',today=todayKey()){
   const q=query.trim().toLocaleLowerCase('ka');
-  const matches=orders.filter(o=>!q||[o.customer,o.product,o.phone,o.region,o.address].some(v=>String(v).toLocaleLowerCase('ka').includes(q)));
+  const matches=orders.filter(o=>!q||[o.customer,o.product,o.phone,o.region,o.address,o.createdBy].some(v=>String(v??'').toLocaleLowerCase('ka').includes(q)));
   const newest=(a,b)=>b.createdAt-a.createdAt||b.id.localeCompare(a.id);
   const pending=matches.filter(o=>o.status==='pending');
   const todayOrders=pending.filter(o=>o.shipDate===today).sort(newest);

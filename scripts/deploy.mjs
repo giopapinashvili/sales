@@ -1,33 +1,119 @@
+// Uploads the orders notebook to Cloudflare in one go:
+//   1. the "sales" Worker (orders, accounts, 12:00 reminders),
+//   2. the "shekvetebi" Pages site at https://shekvetebi.pages.dev
+// Run it with upload-to-cloudflare.cmd (Windows) or `npm run deploy`.
 import {spawn} from 'node:child_process';
 import {createECDH} from 'node:crypto';
-import {readFile,writeFile,access,unlink} from 'node:fs/promises';
+import {readFile, writeFile, unlink, mkdtemp, cp, rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {createInterface} from 'node:readline/promises';
-import {Writable} from 'node:stream';
-const wrangler='node_modules/wrangler/bin/wrangler.js';
-function run(args,input){return new Promise((resolve,reject)=>{const child=spawn(process.execPath,[wrangler,...args],{stdio:[input===undefined?'inherit':'pipe','inherit','inherit'],env:{...process.env,WRANGLER_SEND_METRICS:'false'}});if(input!==undefined)child.stdin.end(input);child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(new Error('მოქმედება შეწყდა. შეცდომა ზემოთაა; გამოსწორების შემდეგ ხელახლა გაუშვი npm run deploy.')))})}
-async function question(text,hidden=false){const output=new Writable({write(chunk,encoding,cb){if(!output.muted)process.stdout.write(chunk);cb()}});const rl=createInterface({input:process.stdin,output,terminal:process.stdin.isTTY});try{if(hidden){process.stdout.write(text);output.muted=true;const value=await rl.question('');output.muted=false;process.stdout.write('\n');return value}return await rl.question(text)}finally{rl.close()}}
-async function main(){
-  await access('public/icons/icon-512.png');
-  let config=JSON.parse(await readFile('wrangler.json','utf8'));
-  const presetPassword=await readFile('.initial-password','utf8').then(value=>value.trim()).catch(()=>null);
-  let secrets;try{secrets=JSON.parse(await readFile('deployment-secrets.json','utf8'))}catch{}
-  if(secrets&&presetPassword&&secrets.APP_PASSWORD!==presetPassword){secrets.APP_PASSWORD=presetPassword;await writeFile('deployment-secrets.json',JSON.stringify(secrets,null,2));}
-  if(!secrets){
-    process.stdout.write('\nშეკვეთების რვეული — Cloudflare-ზე გამართვა\n');
-    const name=(await question(`საიტის მოკლე სახელი [${config.name}]: `)).trim()||config.name;if(!/^[a-z][a-z0-9-]{2,50}$/.test(name))throw new Error('სახელი ჩაწერე ლათინური პატარა ასოებით, ციფრებით და ტირეთი.');config.name=name;
-    const password=presetPassword||await question('მაღაზიის პაროლი (მინ. 8 სიმბოლო, აკრეფა არ ჩანს): ',true);if(password.length<8||password.length>128)throw new Error('პაროლი უნდა შეიცავდეს 8–128 სიმბოლოს.');if(!presetPassword){const repeat=await question('გაიმეორე პაროლი: ',true);if(password!==repeat)throw new Error('პაროლები არ ემთხვევა.');}
-    const contact=(await question('შენი ელფოსტა (შეტყობინების სერვისის საკონტაქტოდ): ')).trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact))throw new Error('ელფოსტა სწორად ჩაწერე.');
-    const key=createECDH('prime256v1');key.generateKeys();secrets={APP_PASSWORD:password,VAPID_PUBLIC_KEY:key.getPublicKey().toString('base64url'),VAPID_PRIVATE_KEY:key.getPrivateKey().toString('base64url'),VAPID_SUBJECT:'mailto:'+contact};await writeFile('deployment-secrets.json',JSON.stringify(secrets,null,2));await writeFile('wrangler.json',JSON.stringify(config,null,2)+'\n');
-  }
-  process.stdout.write('\nშეამოწმე, რომ Cloudflare-ში შენს ანგარიშზე შედიხარ.\n');await run(['login']);await run(['whoami']);
-  let db=config.d1_databases?.find(v=>v.binding==='DB');
-  if(!db||db.database_id==='00000000-0000-0000-0000-000000000000'){
-    await run(['d1','create',config.name+'-db','--binding','DB','--update-config','--location','eeur']);
-    config=JSON.parse(await readFile('wrangler.json','utf8'));db=config.d1_databases.find(v=>v.binding==='DB');if(!db?.database_id)throw new Error('საცავი ვერ მიება. გადახედე Cloudflare-ის პასუხს.');db.migrations_dir='migrations';await writeFile('wrangler.json',JSON.stringify(config,null,2)+'\n');
-  }
-  await run(['d1','migrations','apply','DB','--remote']);
-  await run(['deploy','--secrets-file','deployment-secrets.json']);
-  await unlink('.initial-password').catch(error=>{if(error.code!=='ENOENT')throw error;});
-  process.stdout.write('\nმზადაა! გახსენი ზემოთ ნაჩვენები მისამართი.\nშედი შენს პაროლით, დაამატე აპი ტელეფონში და ზარის ღილაკით ჩართე შეხსენება.\nპაროლი და გასაღებები deployment-secrets.json-შია — შეინახე პირადად.\n');
+
+const PAGES_PROJECT = 'shekvetebi';
+const WORKER = 'sales';
+const project = fileURLToPath(new URL('..', import.meta.url));
+const wrangler = join(project, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+
+function run(args, {cwd = project, quiet = false} = {}) {
+  return new Promise((done, fail) => {
+    const child = spawn(process.execPath, [wrangler, ...args], {cwd, stdio: quiet ? ['inherit', 'pipe', 'pipe'] : 'inherit', env: {...process.env, WRANGLER_SEND_METRICS: 'false'}});
+    let output = '';
+    if (quiet) {
+      child.stdout.on('data', chunk => { output += chunk; });
+      child.stderr.on('data', chunk => { output += chunk; });
+    }
+    child.on('error', fail);
+    child.on('exit', code => (code === 0 ? done(output) : fail(Object.assign(new Error('ბრძანება ვერ შესრულდა. შეცდომა ზემოთაა.'), {output}))));
+  });
 }
-main().catch(error=>{process.stderr.write(error.message+'\n');process.exitCode=1});
+
+async function ask(question) {
+  const rl = createInterface({input: process.stdin, output: process.stdout});
+  try { return (await rl.question(question)).trim(); } finally { rl.close(); }
+}
+
+const say = text => process.stdout.write(text + '\n');
+
+async function secrets() {
+  const file = join(project, 'deployment-secrets.json');
+  let values = {};
+  try { values = JSON.parse(await readFile(file, 'utf8')); } catch {}
+  delete values.APP_PASSWORD; // the old shared password is no longer used
+  if (!values.VAPID_PUBLIC_KEY || !values.VAPID_PRIVATE_KEY) {
+    const key = createECDH('prime256v1');
+    key.generateKeys();
+    values.VAPID_PUBLIC_KEY = key.getPublicKey().toString('base64url');
+    values.VAPID_PRIVATE_KEY = key.getPrivateKey().toString('base64url');
+  }
+  if (!values.VAPID_SUBJECT) {
+    const email = await ask('შენი ელფოსტა (შეტყობინებების სერვისისთვის, კლიენტებს არ ეგზავნებათ): ');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('ელფოსტა სწორად ჩაწერე.');
+    values.VAPID_SUBJECT = 'mailto:' + email;
+  }
+  if (!values.GOOGLE_CLIENT_ID || !values.GOOGLE_CLIENT_SECRET) {
+    say('\nGoogle-ით შესვლა (თუ ჯერ არ გაქვს Google-ის გასაღებები, უბრალოდ დააჭირე Enter-ს და მოგვიანებით დაამატებ).');
+    const id = await ask('Google Client ID: ');
+    if (id) {
+      const secret = await ask('Google Client Secret: ');
+      if (!secret) throw new Error('Client Secret ცარიელია. თავიდან გაუშვი და ორივე ჩაწერე.');
+      values.GOOGLE_CLIENT_ID = id;
+      values.GOOGLE_CLIENT_SECRET = secret;
+    }
+  }
+  await writeFile(file, JSON.stringify(values, null, 2));
+  await unlink(join(project, '.initial-password')).catch(() => {});
+  return file;
+}
+
+async function pagesFolder() {
+  const root = await mkdtemp(join(tmpdir(), PAGES_PROJECT + '-'));
+  const dist = join(root, 'dist');
+  await cp(join(project, 'public'), dist, {recursive: true});
+  await cp(join(project, 'pages-site', '_worker.js'), join(dist, '_worker.js'));
+  await cp(join(project, 'pages-site', '_routes.json'), join(dist, '_routes.json'));
+  await writeFile(join(root, 'wrangler.json'), JSON.stringify({
+    name: PAGES_PROJECT,
+    pages_build_output_dir: './dist',
+    compatibility_date: '2026-10-08',
+    services: [{binding: 'API', service: WORKER}]
+  }, null, 2));
+  return root;
+}
+
+async function main() {
+  say('\nშეკვეთების რვეული — ატვირთვა Cloudflare-ზე\n');
+  say('ნაბიჯი 1/4: Cloudflare-ში შესვლის შემოწმება. თუ ბრაუზერი გაიხსნება, დაადასტურე (Allow).');
+  try { await run(['whoami'], {quiet: true}); } catch { await run(['login']); }
+
+  say('\nნაბიჯი 2/4: გასაღებების მომზადება.');
+  const secretsFile = await secrets();
+
+  say('\nნაბიჯი 3/4: სერვერის ნაწილი (შეკვეთები, ექაუნთები, 12:00-ის შეხსენება).');
+  say('თუ გკითხავს „continue?“, დააჭირე Enter-ს.');
+  await run(['d1', 'migrations', 'apply', 'DB', '--remote']);
+  await run(['deploy', '--secrets-file', secretsFile]);
+
+  say('\nნაბიჯი 4/4: საიტი shekvetebi.pages.dev.');
+  const root = await pagesFolder();
+  try {
+    try {
+      await run(['pages', 'project', 'create', PAGES_PROJECT, '--production-branch', 'main'], {cwd: root, quiet: true});
+      say('Pages პროექტი შეიქმნა.');
+    } catch (error) {
+      if (!/already exists|8000002|taken/i.test(error.output || '')) say('(Pages პროექტი უკვე არსებობს ან ვერ შეიქმნა — ვცდი ატვირთვას.)');
+    }
+    await run(['pages', 'deploy', '--project-name', PAGES_PROJECT, '--branch', 'main', '--commit-dirty=true'], {cwd: root});
+  } finally {
+    await rm(root, {recursive: true, force: true}).catch(() => {});
+  }
+
+  say(`\nმზადაა! საიტი: https://${PAGES_PROJECT}.pages.dev`);
+  say('ძველი მისამართი ავტომატურად ახალზე გადაგიყვანს.');
+  say('deployment-secrets.json პირადი ფაილია. შეინახე და არავის გაუზიარო.');
+}
+
+main().catch(error => {
+  process.stderr.write('\n' + (error.message || error) + '\n');
+  process.exitCode = 1;
+});
