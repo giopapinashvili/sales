@@ -80,24 +80,24 @@ test('Google identity is accepted only for this app and a verified email', () =>
 test('Google callback checks the saved state and swaps the code with the secret', async () => {
   const env = {GOOGLE_CLIENT_ID: 'client-1', GOOGLE_CLIENT_SECRET: 'secret'};
   const state = 'A'.repeat(22), verifier = 'B'.repeat(43);
-  const request = (query, cookie = `google_oauth=${state}.${verifier}.login`) => new Request('https://shekvetebi.pages.dev/auth/google/callback?' + query, {headers: {Cookie: cookie}});
+  const request = (query, cookie = `google_oauth=${state}.${verifier}.login`) => new Request('https://sales.pages.dev/auth/google/callback?' + query, {headers: {Cookie: cookie}});
   let sent;
   const fetcher = async (url, init) => { sent = {url, body: String(init.body)}; return Response.json({id_token: token(goodClaims)}); };
   const ok = await finishGoogle(request(`state=${state}&code=abc`), env, fetcher);
   assert.equal(ok.profile.email, 'nino@gmail.com');
   assert.equal(ok.mode, 'login');
   assert.match(sent.body, /code_verifier=B{43}/);
-  assert.match(sent.body, /redirect_uri=https%3A%2F%2Fshekvetebi.pages.dev%2Fauth%2Fgoogle%2Fcallback/);
+  assert.match(sent.body, /redirect_uri=https%3A%2F%2Fsales.pages.dev%2Fauth%2Fgoogle%2Fcallback/);
   assert.equal((await finishGoogle(request(`state=${'C'.repeat(22)}&code=abc`), env, fetcher)).error, 'google-failed');
   assert.equal((await finishGoogle(request(`state=${state}&code=abc`, ''), env, fetcher)).error, 'google-failed');
   assert.equal((await finishGoogle(request('error=access_denied'), env, fetcher)).error, 'google-cancelled');
 });
 
 test('old workers.dev address sends people to the pages.dev address', () => {
-  const env = {PUBLIC_URL: 'https://shekvetebi.pages.dev'};
+  const env = {PUBLIC_URL: 'https://sales.pages.dev'};
   const moved = publicRedirect(new Request('https://sales.example-account.workers.dev/?filter=today'), env);
   assert.equal(moved.status, 302);
-  assert.equal(moved.headers.get('Location'), 'https://shekvetebi.pages.dev/?filter=today');
-  assert.equal(publicRedirect(new Request('https://shekvetebi.pages.dev/api/session'), env), null);
+  assert.equal(moved.headers.get('Location'), 'https://sales.pages.dev/?filter=today');
+  assert.equal(publicRedirect(new Request('https://sales.pages.dev/api/session'), env), null);
   assert.equal(publicRedirect(new Request('http://127.0.0.1:8791/'), env), null);
 });
