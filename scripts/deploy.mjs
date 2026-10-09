@@ -1,10 +1,12 @@
 // Uploads the orders notebook to Cloudflare in one go:
-//   1. the "sales" Worker (orders, accounts, 12:00 reminders),
-//   2. the "shekvetebi" Pages site at https://shekvetebi.pages.dev
-// Run it with upload-to-cloudflare.cmd (Windows) or `npm run deploy`.
+//   1. the "sales" Worker (the site itself, orders, accounts, 12:00 reminders),
+//   2. the "shekvetebi" Pages front door at https://shekvetebi.pages.dev, which
+//      forwards every request to the Worker.
+// Later updates only need the Worker (this script or a GitHub push); the front
+// door never changes. Run it with upload-to-cloudflare.cmd or `npm run deploy`.
 import {spawn} from 'node:child_process';
 import {createECDH} from 'node:crypto';
-import {readFile, writeFile, unlink, mkdtemp, cp, rm} from 'node:fs/promises';
+import {readFile, writeFile, unlink, mkdtemp, mkdir, cp, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -14,6 +16,7 @@ const PAGES_PROJECT = 'shekvetebi';
 const WORKER = 'sales';
 const project = fileURLToPath(new URL('..', import.meta.url));
 const wrangler = join(project, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+const secretsPath = join(project, 'deployment-secrets.json');
 
 function run(args, {cwd = project, quiet = false} = {}) {
   return new Promise((done, fail) => {
@@ -35,10 +38,12 @@ async function ask(question) {
 
 const say = text => process.stdout.write(text + '\n');
 
-async function secrets() {
-  const file = join(project, 'deployment-secrets.json');
-  let values = {};
-  try { values = JSON.parse(await readFile(file, 'utf8')); } catch {}
+async function readSecrets() {
+  try { return JSON.parse(await readFile(secretsPath, 'utf8')); } catch { return {}; }
+}
+
+async function prepareSecrets() {
+  const values = await readSecrets();
   delete values.APP_PASSWORD; // the old shared password is no longer used
   if (!values.VAPID_PUBLIC_KEY || !values.VAPID_PRIVATE_KEY) {
     const key = createECDH('prime256v1');
@@ -61,17 +66,19 @@ async function secrets() {
       values.GOOGLE_CLIENT_SECRET = secret;
     }
   }
-  await writeFile(file, JSON.stringify(values, null, 2));
+  await writeFile(secretsPath, JSON.stringify(values, null, 2));
   await unlink(join(project, '.initial-password')).catch(() => {});
-  return file;
+  return values;
 }
 
+// The front door only holds a tiny forwarding script.
 async function pagesFolder() {
   const root = await mkdtemp(join(tmpdir(), PAGES_PROJECT + '-'));
   const dist = join(root, 'dist');
-  await cp(join(project, 'public'), dist, {recursive: true});
+  await mkdir(dist);
   await cp(join(project, 'pages-site', '_worker.js'), join(dist, '_worker.js'));
   await cp(join(project, 'pages-site', '_routes.json'), join(dist, '_routes.json'));
+  await writeFile(join(dist, 'robots.txt'), 'User-agent: *\nAllow: /\n');
   await writeFile(join(root, 'wrangler.json'), JSON.stringify({
     name: PAGES_PROJECT,
     pages_build_output_dir: './dist',
@@ -81,34 +88,68 @@ async function pagesFolder() {
   return root;
 }
 
+const domainIn = text => {
+  const found = [...String(text).matchAll(/([a-z0-9-]+\.pages\.dev)/g)].map(match => match[1]);
+  return found.find(domain => domain === `${PAGES_PROJECT}.pages.dev`) || found.find(domain => domain.startsWith(PAGES_PROJECT + '-')) || null;
+};
+
+async function deployFrontDoor() {
+  const root = await pagesFolder();
+  try {
+    let domain = null;
+    try {
+      domain = domainIn(await run(['pages', 'project', 'create', PAGES_PROJECT, '--production-branch', 'main'], {cwd: root, quiet: true}));
+      say('Pages პროექტი შეიქმნა.');
+    } catch (error) {
+      if (!/already exists|8000002|taken/i.test(error.output || '')) say('(Pages პროექტი ვერ შეიქმნა ან უკვე არსებობს — ვცდი ატვირთვას.)');
+    }
+    if (!domain) domain = domainIn(await run(['pages', 'project', 'list'], {cwd: root, quiet: true}).catch(() => ''));
+    await run(['pages', 'deploy', '--project-name', PAGES_PROJECT, '--branch', 'main', '--commit-dirty=true'], {cwd: root});
+    return 'https://' + (domain || `${PAGES_PROJECT}.pages.dev`);
+  } finally {
+    await rm(root, {recursive: true, force: true}).catch(() => {});
+  }
+}
+
+// From now on the old workers.dev address sends visitors to the front door.
+async function rememberPublicUrl(values, url) {
+  if (values.PUBLIC_URL === url) return;
+  values.PUBLIC_URL = url;
+  await writeFile(secretsPath, JSON.stringify(values, null, 2));
+  const folder = await mkdtemp(join(tmpdir(), WORKER + '-url-'));
+  try {
+    await writeFile(join(folder, 'secret.json'), JSON.stringify({PUBLIC_URL: url}));
+    await run(['secret', 'bulk', join(folder, 'secret.json')]);
+  } finally {
+    await rm(folder, {recursive: true, force: true}).catch(() => {});
+  }
+}
+
 async function main() {
+  if (process.env.WORKERS_CI || process.env.CI) {
+    // Automatic build (Cloudflare's GitHub integration): only the Worker. The
+    // front door and the secrets were set up once from a computer.
+    await run(['d1', 'migrations', 'apply', 'DB', '--remote']);
+    await run(['deploy']);
+    return;
+  }
   say('\nშეკვეთების რვეული — ატვირთვა Cloudflare-ზე\n');
   say('ნაბიჯი 1/4: Cloudflare-ში შესვლის შემოწმება. თუ ბრაუზერი გაიხსნება, დაადასტურე (Allow).');
   try { await run(['whoami'], {quiet: true}); } catch { await run(['login']); }
 
   say('\nნაბიჯი 2/4: გასაღებების მომზადება.');
-  const secretsFile = await secrets();
+  const values = await prepareSecrets();
 
-  say('\nნაბიჯი 3/4: სერვერის ნაწილი (შეკვეთები, ექაუნთები, 12:00-ის შეხსენება).');
+  say('\nნაბიჯი 3/4: საიტი და სერვერი (შეკვეთები, ექაუნთები, 12:00-ის შეხსენება).');
   say('თუ გკითხავს „continue?“, დააჭირე Enter-ს.');
   await run(['d1', 'migrations', 'apply', 'DB', '--remote']);
-  await run(['deploy', '--secrets-file', secretsFile]);
+  await run(['deploy', '--secrets-file', secretsPath]);
 
-  say('\nნაბიჯი 4/4: საიტი shekvetebi.pages.dev.');
-  const root = await pagesFolder();
-  try {
-    try {
-      await run(['pages', 'project', 'create', PAGES_PROJECT, '--production-branch', 'main'], {cwd: root, quiet: true});
-      say('Pages პროექტი შეიქმნა.');
-    } catch (error) {
-      if (!/already exists|8000002|taken/i.test(error.output || '')) say('(Pages პროექტი უკვე არსებობს ან ვერ შეიქმნა — ვცდი ატვირთვას.)');
-    }
-    await run(['pages', 'deploy', '--project-name', PAGES_PROJECT, '--branch', 'main', '--commit-dirty=true'], {cwd: root});
-  } finally {
-    await rm(root, {recursive: true, force: true}).catch(() => {});
-  }
+  say(`\nნაბიჯი 4/4: მისამართი ${PAGES_PROJECT}.pages.dev.`);
+  const url = await deployFrontDoor();
+  await rememberPublicUrl(values, url);
 
-  say(`\nმზადაა! საიტი: https://${PAGES_PROJECT}.pages.dev`);
+  say(`\nმზადაა! საიტი: ${url}`);
   say('ძველი მისამართი ავტომატურად ახალზე გადაგიყვანს.');
   say('deployment-secrets.json პირადი ფაილია. შეინახე და არავის გაუზიარო.');
 }

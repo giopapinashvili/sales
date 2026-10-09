@@ -16,9 +16,6 @@
       "migrations_dir": "migrations"
     }
   ],
-  "vars": {
-    "PUBLIC_URL": "https://shekvetebi.pages.dev"
-  },
   "triggers": {
     "crons": [
       "*/5 8 * * *"

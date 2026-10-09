@@ -11,17 +11,17 @@
 
 | ნაწილი | სად | რას აკეთებს |
 | --- | --- | --- |
-| `server/` | Worker `sales` (D1 `sales-db`, Cron) | API, ექაუნთები, Google OAuth, შეხსენებები |
-| `public/` | Pages `shekvetebi` | საიტის ფაილები |
-| `pages-site/_worker.js` | Pages | `/api/*` და `/auth/*` გადასცემს Worker-ს service binding-ით |
+| `server/` + `public/` | Worker `sales` (D1 `sales-db`, Cron) | საიტის ფაილები, API, ექაუნთები, Google OAuth, შეხსენებები |
+| `pages-site/` | Pages `shekvetebi` | „შესასვლელი კარი“: ყველა მოთხოვნას service binding-ით გადასცემს Worker-ს |
 
-Worker-ის workers.dev მისამართი 302-ით გადადის `PUBLIC_URL`-ზე. პაროლი ბრაუზერში იჭიმება (PBKDF2, 150 000) და სერვერზე კიდევ ერთხელ (PBKDF2, 20 000, შემთხვევითი მარილით).
+Pages პროექტში მხოლოდ გადამგზავნი სკრიპტია, ამიტომ განახლებისთვის საკმარისია Worker-ის ატვირთვა (GitHub-იდან ან სკრიპტით). `PUBLIC_URL` secret-ად ინახება მას შემდეგ, რაც Pages მისამართი შეიქმნება; მერე Worker-ის workers.dev მისამართი 302-ით გადადის მასზე. ცხრილებს Worker თავად ქმნის, თუ ჯერ არ არსებობს (`ensureSchema`), ამიტომ GitHub-იდან ატვირთვაც მუშაობს; D1 მიგრაციას (ძველი ცხრილების წაშლა) სკრიპტი უშვებს. პაროლი ბრაუზერში იჭიმება (PBKDF2, 150 000) და სერვერზე კიდევ ერთხელ (PBKDF2, 20 000, შემთხვევითი მარილით).
 
-Secrets (Worker-ზე): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, სურვილისამებრ `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Google-ის redirect URI: `https://shekvetebi.pages.dev/auth/google/callback`.
+Secrets (Worker-ზე): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUBLIC_URL`, სურვილისამებრ `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Google-ის redirect URI: `https://shekvetebi.pages.dev/auth/google/callback`.
 
 ## ატვირთვა
 
-Windows: `upload-to-cloudflare.cmd`. სხვაგან: `npm ci && npm run deploy`. სკრიპტი აწყობს secrets-ს, უშვებს D1 მიგრაციებს, ტვირთავს Worker-ს და Pages პროექტს (Pages-ის ფაილები დროებით საქაღალდეში იკრიბება). დეტალები: [START-HERE.txt](START-HERE.txt).
+- GitHub-ზე `main`-ში ატვირთვა Worker-ს ავტომატურად აახლებს, თუ Cloudflare-ში Git კავშირი ჩართულია.
+- `upload-to-cloudflare.cmd` (ან `npm ci && npm run deploy`) ერთხელ მაინც გაუშვი: აწყობს secrets-ს, უშვებს D1 მიგრაციებს, ტვირთავს Worker-ს, ქმნის Pages მისამართს და რთავს ძველი მისამართის გადამისამართებას. დეტალები: [START-HERE.txt](START-HERE.txt).
 
 ## ლოკალური შემოწმება
 
@@ -31,5 +31,5 @@ node scripts/prepare-dev.mjs
 npm run db:local
 npm run dev            # http://127.0.0.1:8791
 npm test               # ერთეულების ტესტები
-npm run test:api       # API ტესტები გაშვებულ სერვერზე
+npm run test:api       # API ტესტები გაშვებულ სერვერზე (BASE_URL-ით სხვა მისამართზეც)
 ```

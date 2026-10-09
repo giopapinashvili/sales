@@ -1,14 +1,14 @@
-// Forwards account and order requests to the "sales" Worker. Everything else
-// on the site is a static file served by Pages directly.
+// The pages.dev front door. Every request goes to the "sales" Worker, which
+// serves the site itself, the orders API and Google sign-in. Updating the
+// Worker (for example from GitHub) therefore updates this address too.
 export default {
   async fetch(request, env) {
-    const {pathname} = new URL(request.url);
-    if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
-      if (!env.API) {
-        return Response.json({error: 'საიტს Cloudflare-ზე გამართვა სჭირდება.'}, {status: 503, headers: {'Cache-Control': 'no-store'}});
-      }
-      return env.API.fetch(request);
+    if (!env.API) {
+      return new Response('საიტს Cloudflare-ზე გამართვა სჭირდება.', {
+        status: 503,
+        headers: {'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store'}
+      });
     }
-    return env.ASSETS.fetch(request);
+    return env.API.fetch(request);
   }
 };
