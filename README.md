@@ -1,6 +1,6 @@
 # შეკვეთების რვეული
 
-ქართული შეკვეთების რვეული ონლაინ გამყიდველებისთვის: https://sales.pages.dev
+ქართული შეკვეთების რვეული ონლაინ გამყიდველებისთვის: https://shekvetebi.pages.dev
 
 - საიტი ცარიელი რვეულით იხსნება. პირველი შეკვეთის შენახვისას სერვერზე იქმნება ამ ბრაუზერის რვეული (ექაუნთი ელფოსტის გარეშე), რომელსაც მხოლოდ ამ ბრაუზერის HttpOnly ქუქი ხსნის.
 - რეგისტრაცია (ელფოსტა/პაროლი ან Google) იმავე ექაუნთს ამატებს ელფოსტას. არსებულ ექაუნთში შესვლისას ბრაუზერის შეკვეთების გადმოტანა შეიძლება.
@@ -12,11 +12,11 @@
 | ნაწილი | სად | რას აკეთებს |
 | --- | --- | --- |
 | `server/` + `public/` | Worker `sales` (D1 `sales-db`, Cron) | საიტის ფაილები, API, ექაუნთები, Google OAuth, შეხსენებები |
-| `pages-site/` | Pages `sales` | „შესასვლელი კარი“: ყველა მოთხოვნას service binding-ით გადასცემს Worker-ს |
+| `pages-site/` | Pages `shekvetebi` | „შესასვლელი კარი“: ყველა მოთხოვნას service binding-ით გადასცემს Worker-ს |
 
 Pages პროექტში მხოლოდ გადამგზავნი სკრიპტია, ამიტომ განახლებისთვის საკმარისია Worker-ის ატვირთვა (GitHub-იდან ან სკრიპტით). `PUBLIC_URL` secret-ად ინახება მას შემდეგ, რაც Pages მისამართი შეიქმნება; მერე Worker-ის workers.dev მისამართი 302-ით გადადის მასზე. ცხრილებს Worker თავად ქმნის, თუ ჯერ არ არსებობს (`ensureSchema`), ამიტომ GitHub-იდან ატვირთვაც მუშაობს; D1 მიგრაციას (ძველი ცხრილების წაშლა) სკრიპტი უშვებს. პაროლი ბრაუზერში იჭიმება (PBKDF2, 150 000) და სერვერზე კიდევ ერთხელ (PBKDF2, 20 000, შემთხვევითი მარილით).
 
-Secrets (Worker-ზე): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUBLIC_URL`, სურვილისამებრ `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Google-ის redirect URI: `https://sales.pages.dev/auth/google/callback`.
+Secrets (Worker-ზე): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUBLIC_URL`, სურვილისამებრ `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Google-ის redirect URI: `https://shekvetebi.pages.dev/auth/google/callback`.
 
 ## ატვირთვა
 

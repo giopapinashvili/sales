@@ -1,7 +1,7 @@
 შეკვეთების რვეული — რა შეიცვალა და როგორ ავტვირთო
 ===================================================
 
-ახალი მისამართი: https://sales.pages.dev
+ახალი მისამართი: https://shekvetebi.pages.dev
 ძველი მისამართი (sales....workers.dev) ავტომატურად ახალზე გადაიყვანს.
 
 
@@ -27,7 +27,7 @@
 • GitHub-ზე ატვირთვისას საიტი თავისით ახლდება (თუ Cloudflare-ში GitHub
   მიბმულია). ძველ მისამართზე ახალი ვერსია მაშინვე გამოჩნდება.
 • ერთხელ აუცილებლად გაუშვი ფაილი upload-to-cloudflare.cmd. ის:
-    – ქმნის ახალ მისამართს sales.pages.dev,
+    – ქმნის ახალ მისამართს shekvetebi.pages.dev,
     – ინახავს შეხსენების და Google-ის გასაღებებს,
     – ძველ მისამართს ახალზე გადამისამართებს,
     – შლის ძველ შეკვეთებს და ძველ პაროლს.
@@ -43,7 +43,7 @@
 3. თუ Google Client ID-ს გკითხავს და ჯერ არ გაქვს, უბრალოდ Enter დააჭირე.
    Google-ით შესვლას მოგვიანებით ჩართავ (იხ. ქვემოთ).
 4. თუ ინგლისურად გკითხავს „continue?“, დააჭირე Enter-ს.
-5. ბოლოს ეწერება: „მზადაა! საიტი: https://sales.pages.dev“.
+5. ბოლოს ეწერება: „მზადაა! საიტი: https://shekvetebi.pages.dev“.
 
 
 Google-ით შესვლის ჩართვა (ერთხელ, ორივე საიტისთვის ერთად)
@@ -53,11 +53,11 @@ Google-ით შესვლის ჩართვა (ერთხელ, ო�
 3. მენიუდან გახსენი „Google Auth Platform“ (ძველ ვერსიაში „OAuth consent screen“):
    • Branding: App name — მაგ. „შეკვეთების რვეული“, User support email — შენი
      ელფოსტა. თუ Authorized domains-ს მოითხოვს, დაამატე:
-     sales.pages.dev და javshnebi.pages.dev
+     shekvetebi.pages.dev და javshnebi.pages.dev
    • Audience: External, მერე დააჭირე Publish app, რომ ყველამ შეძლოს შესვლა.
 4. Clients → Create client → Application type: Web application.
    Authorized redirect URIs-ში დაამატე ორი ხაზი:
-     https://sales.pages.dev/auth/google/callback
+     https://shekvetebi.pages.dev/auth/google/callback
      https://javshnebi.pages.dev/auth/google/callback
    → Create.
 5. გამოჩნდება Client ID და Client Secret. შეინახე სადმე პირადად.

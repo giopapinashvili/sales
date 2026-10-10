@@ -1,6 +1,6 @@
 // Uploads the orders notebook to Cloudflare in one go:
 //   1. the "sales" Worker (the site itself, orders, accounts, 12:00 reminders),
-//   2. the "sales" Pages front door at https://sales.pages.dev, which
+//   2. the "shekvetebi" Pages front door at https://shekvetebi.pages.dev, which
 //      forwards every request to the Worker.
 // Later updates only need the Worker (this script or a GitHub push); the front
 // door never changes. Run it with upload-to-cloudflare.cmd or `npm run deploy`.
@@ -12,7 +12,7 @@ import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createInterface} from 'node:readline/promises';
 
-const PAGES_PROJECT = 'sales';
+const PAGES_PROJECT = 'shekvetebi';
 const WORKER = 'sales';
 const project = fileURLToPath(new URL('..', import.meta.url));
 const wrangler = join(project, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
