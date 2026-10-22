@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "sales" generated at 2026-10-08T20:59:25.662Z.
